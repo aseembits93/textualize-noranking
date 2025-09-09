@@ -39,10 +39,9 @@ class Styled:
         pre_style = console.get_style(self.pre_style)
         post_style = console.get_style(self.post_style)
         rendered_segments = console.render(self.renderable, options)
-        segments = Segment.apply_style(
+        yield from Segment.apply_style(
             rendered_segments, style=pre_style, post_style=post_style
         )
-        return segments
 
     def __rich_measure__(
         self, console: "Console", options: "ConsoleOptions"
