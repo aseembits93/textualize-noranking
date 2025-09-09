@@ -68,7 +68,9 @@ class ETA:
             return
         prune_time = self._samples[-1][0] - self.estimation_period
         index = bisect.bisect_left(self._samples, (prune_time, 0))
-        del self._samples[:index]
+        if index == 0:
+            return
+        self._samples = self._samples[index:]
 
     def _get_progress_at(self, time: float) -> tuple[float, float]:
         """Get the progress at a specific time."""
