@@ -71,12 +71,12 @@ def get_current_worker() -> Worker:
     Returns:
         A Worker instance.
     """
-    try:
-        return active_worker.get()
-    except LookupError:
+    worker = active_worker.get(None)
+    if worker is None:
         raise NoActiveWorker(
             "There is no active worker in this task or thread."
         ) from None
+    return worker
 
 
 class WorkerState(enum.Enum):
