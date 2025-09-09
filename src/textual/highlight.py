@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from typing import Tuple
 
 from pygments.lexer import Lexer
@@ -70,20 +71,16 @@ def guess_language(code: str, path: str) -> str:
 
     lexer: Lexer | None = None
     lexer_name = "default"
+
     if code:
-        try:
-            lexer = guess_lexer_for_filename(path, code)
-        except ClassNotFound:
-            pass
+        lexer_guess = _cached_guess_lexer_for_filename(path, code)
+        if lexer_guess is not _CNF_SENTINEL:
+            lexer = lexer_guess
 
     if not lexer:
-        try:
-            _, ext = os.path.splitext(path)
-            if ext:
-                extension = ext.lstrip(".").lower()
-                lexer = get_lexer_by_name(extension)
-        except ClassNotFound:
-            pass
+        extension = _get_extension(path)
+        if extension:
+            lexer = _cached_get_lexer_by_name(extension)
 
     if lexer:
         if lexer.aliases:
@@ -151,3 +148,24 @@ def highlight(
 
     highlighted_code = Content(code, spans=spans).stylize_before("$text")
     return highlighted_code
+
+@lru_cache(maxsize=64)
+def _cached_get_lexer_by_name(extension: str) -> Lexer | None:
+    try:
+        return get_lexer_by_name(extension)
+    except ClassNotFound:
+        return None
+
+@lru_cache(maxsize=256)
+def _cached_guess_lexer_for_filename(path: str, code: str) -> Lexer | object:
+    try:
+        return guess_lexer_for_filename(path, code)
+    except ClassNotFound:
+        return _CNF_SENTINEL
+
+@lru_cache(maxsize=128)
+def _get_extension(path: str) -> str:
+    ext = os.path.splitext(path)[-1]
+    return ext.lstrip(".").lower() if ext else ""
+
+_CNF_SENTINEL = object()
