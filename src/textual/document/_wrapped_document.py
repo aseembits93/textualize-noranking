@@ -417,8 +417,16 @@ class WrappedDocument:
             The wrapped line as a list of strings.
         """
         line_offsets = self._wrap_offsets[line_index]
-        wrapped_lines = Text(self.document[line_index], end="").divide(line_offsets)
-        return [line.plain for line in wrapped_lines]
+        line = self.document[line_index]
+        if not line_offsets:
+            return [line]
+        sections: list[str] = []
+        start = 0
+        for offset in line_offsets:
+            sections.append(line[start:offset])
+            start = offset
+        sections.append(line[start:])
+        return sections
 
     def get_offsets(self, line_index: int) -> list[int]:
         """Given a line index, get the offsets within that line where wrapping
