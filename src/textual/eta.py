@@ -73,14 +73,15 @@ class ETA:
     def _get_progress_at(self, time: float) -> tuple[float, float]:
         """Get the progress at a specific time."""
 
-        index = bisect.bisect_left(self._samples, (time, 0))
-        if index >= len(self._samples):
-            return self.last_sample
+        samples = self._samples
+        index = bisect.bisect_left(samples, (time, 0))
+        if index >= len(samples):
+            return self._samples[-1]
         if index == 0:
-            return self.first_sample
+            return self._samples[0]
         # Linearly interpolate progress between two samples
-        time1, progress1 = self._samples[index - 1]
-        time2, progress2 = self._samples[index]
+        time1, progress1 = samples[index - 1]
+        time2, progress2 = samples[index]
         factor = (time - time1) / (time2 - time1)
         intermediate_progress = progress1 + (progress2 - progress1) * factor
         return time, intermediate_progress
