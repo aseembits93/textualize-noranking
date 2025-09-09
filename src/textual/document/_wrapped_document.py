@@ -66,6 +66,8 @@ class WrappedDocument:
         """The maximum width to expand tabs to when considering their widths."""
 
         self.wrap(width, tab_width)
+        # Create a per-instance LRU cache for get_sections
+        self._get_sections_cache = {}
 
     @property
     def wrapped(self) -> bool:
@@ -373,29 +375,18 @@ class WrappedDocument:
             The column index corresponding to the line index and y offset.
         """
 
-        # We've found the relevant line, now find the character by
-        # looking at the character corresponding to the offset width.
         sections = self.get_sections(line_index)
 
-        # wrapped_section is the text that appears on a single y_offset within
-        # the TextArea. It's a potentially wrapped portion of a larger line from
-        # the original document.
         target_section = sections[y_offset]
 
-        # Add the offsets from the wrapped sections above this one (from the same raw
-        # document line)
         target_section_start = sum(
             len(wrapped_section) for wrapped_section in sections[:y_offset]
         )
 
-        # Get the column index within this wrapped section of the line
         target_column_index = target_section_start + cell_width_to_column_index(
             target_section, x_offset, self._tab_width
         )
 
-        # If we're on the final section of a line, the cursor can legally rest beyond
-        # the end by a single cell. Otherwise, we'll need to ensure that we're
-        # keeping the cursor within the bounds of the target section.
         if y_offset != len(sections) - 1 and y_offset != -1:
             target_column_index = min(
                 target_column_index, target_section_start + len(target_section) - 1
@@ -416,9 +407,22 @@ class WrappedDocument:
         Returns:
             The wrapped line as a list of strings.
         """
+        # Use document line contents and wrap offsets for cache key
         line_offsets = self._wrap_offsets[line_index]
-        wrapped_lines = Text(self.document[line_index], end="").divide(line_offsets)
-        return [line.plain for line in wrapped_lines]
+        line = self.document[line_index]
+        cache_key = (line, tuple(line_offsets))
+        cached = self._get_sections_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        # Early return for trivial case (avoid Text object allocation)
+        if not line_offsets or not line:
+            result = [line]
+            self._get_sections_cache[cache_key] = result
+            return result
+        wrapped_lines = Text(line, end="").divide(line_offsets)
+        result = [line.plain for line in wrapped_lines]
+        self._get_sections_cache[cache_key] = result
+        return result
 
     def get_offsets(self, line_index: int) -> list[int]:
         """Given a line index, get the offsets within that line where wrapping
