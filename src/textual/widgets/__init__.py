@@ -106,7 +106,7 @@ def __getattr__(widget_class: str) -> type[Widget]:
     except KeyError:
         pass
 
-    if widget_class not in __all__:
+    if widget_class not in _WIDGETS_LAZY_LOADING_NAMES:
         raise AttributeError(f"Package 'textual.widgets' has no class '{widget_class}'")
 
     widget_module_path = f"._{camel_to_snake(widget_class)}"
@@ -115,3 +115,5 @@ def __getattr__(widget_class: str) -> type[Widget]:
 
     _WIDGETS_LAZY_LOADING_CACHE[widget_class] = class_
     return class_
+
+_WIDGETS_LAZY_LOADING_NAMES = frozenset(__all__)

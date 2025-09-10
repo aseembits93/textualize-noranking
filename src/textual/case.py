@@ -1,6 +1,8 @@
 import re
 from typing import Match, Pattern
 
+_RE_SNAKE: Pattern[str] = re.compile("[a-z][A-Z]")
+
 
 def camel_to_snake(
     name: str, _re_snake: Pattern[str] = re.compile("[a-z][A-Z]")
