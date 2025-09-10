@@ -557,7 +557,9 @@ class StylesBase:
         return getattr(self, key)
 
     def get(self, key: str, default: object | None = None) -> object:
-        return getattr(self, key) if key in RULE_NAMES_SET else default
+        if key in RULE_NAMES_SET:
+            return getattr(self, key)
+        return default
 
     def __len__(self) -> int:
         return len(RULE_NAMES)
