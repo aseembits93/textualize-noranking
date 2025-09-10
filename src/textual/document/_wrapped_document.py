@@ -434,13 +434,13 @@ class WrappedDocument:
             The offsets within the line where wrapping should occur.
         """
         wrap_offsets = self._wrap_offsets
-        out_of_bounds = line_index < 0 or line_index >= len(wrap_offsets)
-        if out_of_bounds:
-            raise ValueError(
-                f"The document line index {line_index!r} is out of bounds. "
-                f"The document contains {len(wrap_offsets)!r} lines."
-            )
-        return wrap_offsets[line_index]
+        if 0 <= line_index < len(wrap_offsets):
+            return wrap_offsets[line_index]
+        count = len(wrap_offsets)
+        raise ValueError(
+            f"The document line index {line_index!r} is out of bounds. "
+            f"The document contains {count!r} lines."
+        )
 
     def get_tab_widths(self, line_index: int) -> list[int]:
         """Return a list of the tab widths for the given line index.
